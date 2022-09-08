@@ -126,7 +126,7 @@ impl Commands {
                 let buf_reader = BufReader::new(c);
 
                 buf_reader.lines().into_iter().for_each(|line| match line {
-                    Ok(line) => println!("[{name}] {line}"),
+                    Ok(line) => println!("\x1b[47;4m[{name}]\x1b[0m {line}"),
                     Err(e) => eprintln!("{}", CommandErr::CommandOutputErr(e.to_string())),
                 })
             }));

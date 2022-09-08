@@ -1,5 +1,5 @@
+mod color;
 mod command;
-
 use command::{Args, CommandErr, Commands};
 use thiserror::Error;
 
