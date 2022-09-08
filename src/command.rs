@@ -60,10 +60,10 @@ impl Args {
             .map(|a| a.to_string())
             .collect::<Vec<_>>();
 
-        let sep = args.get_one::<&str>("sep").unwrap_or(&",");
+        let sep = args.get_one::<String>("sep").unwrap(); // Default is ','
 
         let names = match args.get_one::<String>("names") {
-            Some(names) => names.split(*sep).map(|n| n.to_string()).collect::<Vec<_>>(),
+            Some(names) => names.split(sep).map(|n| n.to_string()).collect::<Vec<_>>(),
             None => Args::get_programmes(&commands),
         };
 
