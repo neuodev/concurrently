@@ -71,7 +71,10 @@ impl Commands {
                 let mut child = command
                     .spawn()
                     .map_err(|e| CommandErr::CommandErr(e))
-                    .expect("Unable to start this command");
+                    .unwrap_or_else(|e| {
+                        eprintln!("[{idx}] {} [{:?}]", e, command);
+                        process::exit(1);
+                    });
 
                 let c = child.stdout.take().unwrap();
                 let buf_reader = BufReader::new(c);
