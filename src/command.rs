@@ -1,13 +1,13 @@
 use clap;
 use std::{
-    io::{BufRead, BufReader, Stdout},
+    io::{BufRead, BufReader},
     process::{self, Stdio},
     thread,
 };
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum ArgsErr {
+pub enum CommandErr {
     #[error("`{0}` is not a valid command")]
     InvalidCommand(String),
     #[error("Found an empty command")]
@@ -21,11 +21,11 @@ pub enum ArgsErr {
 }
 
 pub struct Args {
-    commands: Vec<String>,
+    pub commands: Vec<String>,
 }
 
 impl Args {
-    pub fn new() -> Result<Args, ArgsErr> {
+    pub fn new() -> Result<Args, CommandErr> {
         let args = clap::Command::new("concurrently")
             .author("Ahmed Ibrahim")
             .version("1.0.0")
@@ -40,7 +40,7 @@ impl Args {
 
         let commands = args
             .get_many::<String>("commands")
-            .ok_or(ArgsErr::MissingCommandsArg)?
+            .ok_or(CommandErr::MissingCommandsArg)?
             .map(|a| a.to_string())
             .collect::<Vec<_>>();
         Ok(Args { commands })
@@ -48,27 +48,37 @@ impl Args {
 }
 
 pub struct Commands {
-    commands: Vec<process::Command>,
+    pub commands: Vec<process::Command>,
 }
 
 impl Commands {
-    pub fn new(commands: &Vec<impl Into<String>>) {}
+    pub fn new<T>(raw_commands: &Vec<T>) -> Result<Commands, CommandErr>
+    where
+        T: ToString,
+    {
+        let mut commands = Vec::new();
+        for command in raw_commands {
+            commands.push(Commands::parse_command(&command.to_string())?);
+        }
+
+        Ok(Commands { commands })
+    }
 
     pub fn spawn(self) {
         let mut handlers = vec![];
-        for mut command in self.commands {
+        for (idx, mut command) in self.commands.into_iter().enumerate() {
             handlers.push(thread::spawn(move || {
                 let mut child = command
                     .spawn()
-                    .map_err(|e| ArgsErr::CommandErr(e))
+                    .map_err(|e| CommandErr::CommandErr(e))
                     .expect("Unable to start this command");
 
                 let c = child.stdout.take().unwrap();
                 let buf_reader = BufReader::new(c);
 
                 buf_reader.lines().into_iter().for_each(|line| match line {
-                    Ok(line) => println!("{line}"),
-                    Err(e) => eprintln!("{}", ArgsErr::CommandOutputErr(e.to_string())),
+                    Ok(line) => println!("[{idx}] {line}"),
+                    Err(e) => eprintln!("{}", CommandErr::CommandOutputErr(e.to_string())),
                 })
             }));
         }
@@ -78,13 +88,15 @@ impl Commands {
         }
     }
 
-    fn parse_command(command: &str) -> Result<process::Command, ArgsErr> {
+    fn parse_command(command: &str) -> Result<process::Command, CommandErr> {
         if command.trim().is_empty() {
-            return Err(ArgsErr::EmptyCommand);
+            return Err(CommandErr::EmptyCommand);
         }
 
         let args = command.split_whitespace().collect::<Vec<_>>();
-        let program = args.get(0).ok_or(ArgsErr::InvalidCommand(command.into()))?;
+        let program = args
+            .get(0)
+            .ok_or(CommandErr::InvalidCommand(command.into()))?;
 
         let mut command = process::Command::new(*program);
         command.args(&args[1..]);
