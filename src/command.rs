@@ -40,7 +40,8 @@ impl Args {
             .arg(
                 clap::Arg::new("names")
                     .help("A comma separated values represent a name fore each running process")
-                    .required(false),
+                    .short('s')
+                    .takes_value(true),
             )
             .get_matches();
 
@@ -77,31 +78,32 @@ impl Args {
 }
 
 pub struct Commands {
-    pub commands: Vec<process::Command>,
+    commands: Vec<process::Command>,
+    names: Vec<String>,
 }
 
 impl Commands {
-    pub fn new<T>(raw_commands: &Vec<T>) -> Result<Commands, CommandErr>
-    where
-        T: ToString,
-    {
+    pub fn new(args: &Args) -> Result<Commands, CommandErr> {
         let mut commands = Vec::new();
-        for command in raw_commands {
-            commands.push(Commands::parse_command(&command.to_string())?);
+        for command in &args.commands {
+            commands.push(Commands::parse_command(command)?);
         }
 
-        Ok(Commands { commands })
+        Ok(Commands {
+            commands,
+            names: args.names.clone(),
+        })
     }
 
     pub fn spawn(self) {
         let mut handlers = vec![];
-        for (idx, mut command) in self.commands.into_iter().enumerate() {
+        for (mut command, name) in self.commands.into_iter().zip(self.names) {
             handlers.push(thread::spawn(move || {
                 let mut child = command
                     .spawn()
                     .map_err(|e| CommandErr::CommandErr(e))
                     .unwrap_or_else(|e| {
-                        eprintln!("[{idx}] {} [{:?}]", e, command);
+                        eprintln!("[{name}] {} [{:?}]", e, command);
                         process::exit(1);
                     });
 
@@ -109,7 +111,7 @@ impl Commands {
                 let buf_reader = BufReader::new(c);
 
                 buf_reader.lines().into_iter().for_each(|line| match line {
-                    Ok(line) => println!("[{idx}] {line}"),
+                    Ok(line) => println!("[{name}] {line}"),
                     Err(e) => eprintln!("{}", CommandErr::CommandOutputErr(e.to_string())),
                 })
             }));

@@ -11,7 +11,7 @@ enum AppErr {
 
 fn main() -> Result<(), AppErr> {
     let args = Args::new()?;
-    let commands = Commands::new(&args.commands)?;
+    let commands = Commands::new(&args)?;
     commands.spawn();
 
     Ok(())
