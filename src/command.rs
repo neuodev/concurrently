@@ -42,8 +42,15 @@ impl Args {
             .arg(
                 clap::Arg::new("names")
                     .help("A comma separated values represent a name fore each running process")
-                    .short('s')
+                    .short('n')
                     .takes_value(true),
+            )
+            .arg(
+                clap::Arg::new("sep")
+                    .help("Separator of the processe names")
+                    .short('s')
+                    .takes_value(true)
+                    .default_value(","),
             )
             .get_matches();
 
@@ -53,8 +60,10 @@ impl Args {
             .map(|a| a.to_string())
             .collect::<Vec<_>>();
 
+        let sep = args.get_one::<&str>("sep").unwrap_or(&",");
+
         let names = match args.get_one::<String>("names") {
-            Some(names) => names.split(",").map(|n| n.to_string()).collect::<Vec<_>>(),
+            Some(names) => names.split(*sep).map(|n| n.to_string()).collect::<Vec<_>>(),
             None => Args::get_programmes(&commands),
         };
 
