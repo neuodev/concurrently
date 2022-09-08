@@ -22,6 +22,7 @@ pub enum CommandErr {
 
 pub struct Args {
     pub commands: Vec<String>,
+    pub names: Vec<String>,
 }
 
 impl Args {
@@ -36,6 +37,11 @@ impl Args {
                     .multiple_values(true)
                     .required(true),
             )
+            .arg(
+                clap::Arg::new("names")
+                    .help("A comma separated values represent a name fore each running process")
+                    .required(false),
+            )
             .get_matches();
 
         let commands = args
@@ -43,7 +49,30 @@ impl Args {
             .ok_or(CommandErr::MissingCommandsArg)?
             .map(|a| a.to_string())
             .collect::<Vec<_>>();
-        Ok(Args { commands })
+
+        let names = match args.get_one::<String>("names") {
+            Some(names) => names.split(",").map(|n| n.to_string()).collect::<Vec<_>>(),
+            None => Args::get_programmes(&commands),
+        };
+
+        Ok(Args { commands, names })
+    }
+
+    fn get_programmes(commands: &Vec<String>) -> Vec<String> {
+        commands
+            .iter()
+            .enumerate()
+            .map(|(idx, command)| {
+                if command.trim().is_empty() {
+                    idx.to_string()
+                } else {
+                    match command.split_whitespace().next() {
+                        Some(pro) => pro.into(),
+                        None => idx.to_string(),
+                    }
+                }
+            })
+            .collect::<Vec<String>>()
     }
 }
 
