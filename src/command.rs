@@ -20,13 +20,12 @@ pub enum ArgsErr {
     CommandOutputErr(String),
 }
 
-/// Run multiple commands concurrently
 pub struct Args {
-    commands: Vec<process::Command>,
+    commands: Vec<String>,
 }
 
 impl Args {
-    pub fn new() -> Result<(), ArgsErr> {
+    pub fn new() -> Result<Args, ArgsErr> {
         let args = clap::Command::new("concurrently")
             .author("Ahmed Ibrahim")
             .version("1.0.0")
@@ -39,33 +38,21 @@ impl Args {
             )
             .get_matches();
 
-        let commands_str = args
+        let commands = args
             .get_many::<String>("commands")
-            .ok_or(ArgsErr::MissingCommandsArg)?;
-
-        let mut commands = Vec::new();
-        for command in commands_str {
-            let command = Args::parse_command(command)?;
-            commands.push(command);
-        }
-
-        Ok(())
+            .ok_or(ArgsErr::MissingCommandsArg)?
+            .map(|a| a.to_string())
+            .collect::<Vec<_>>();
+        Ok(Args { commands })
     }
+}
 
-    fn parse_command(command: &str) -> Result<process::Command, ArgsErr> {
-        if command.trim().is_empty() {
-            return Err(ArgsErr::EmptyCommand);
-        }
+pub struct Commands {
+    commands: Vec<process::Command>,
+}
 
-        let args = command.split_whitespace().collect::<Vec<_>>();
-        let program = args.get(0).ok_or(ArgsErr::InvalidCommand(command.into()))?;
-
-        let mut command = process::Command::new(*program);
-        command.args(&args[1..]);
-        command.stdout(Stdio::piped());
-
-        Ok(command)
-    }
+impl Commands {
+    pub fn new(commands: &Vec<impl Into<String>>) {}
 
     pub fn spawn(self) {
         let mut handlers = vec![];
@@ -89,5 +76,20 @@ impl Args {
         for handler in handlers {
             handler.join().unwrap();
         }
+    }
+
+    fn parse_command(command: &str) -> Result<process::Command, ArgsErr> {
+        if command.trim().is_empty() {
+            return Err(ArgsErr::EmptyCommand);
+        }
+
+        let args = command.split_whitespace().collect::<Vec<_>>();
+        let program = args.get(0).ok_or(ArgsErr::InvalidCommand(command.into()))?;
+
+        let mut command = process::Command::new(*program);
+        command.args(&args[1..]);
+        command.stdout(Stdio::piped());
+
+        Ok(command)
     }
 }

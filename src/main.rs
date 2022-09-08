@@ -1,14 +1,16 @@
 mod command;
 
-use std::{
-    io::{stderr, BufRead, BufReader},
-    process::{Command, Stdio},
-};
+use command::{Args, ArgsErr};
+use thiserror::Error;
 
-use command::Args;
+#[derive(Debug, Error)]
+enum AppErr {
+    #[error("Args error: `{0}`")]
+    ArgsErr(#[from] ArgsErr),
+}
 
-fn main() -> std::io::Result<()> {
-    let args = Args::new();
+fn main() -> Result<(), AppErr> {
+    let args = Args::new()?;
 
     // println!("{:?}", args);
     // let commands = vec![
