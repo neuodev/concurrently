@@ -18,6 +18,8 @@ pub enum CommandErr {
     CommandErr(#[from] std::io::Error),
     #[error("Command output error: `{0}`")]
     CommandOutputErr(String),
+    #[error("Size mismatch: `{0}`")]
+    SizeMismatch(String),
 }
 
 pub struct Args {
@@ -56,7 +58,11 @@ impl Args {
             None => Args::get_programmes(&commands),
         };
 
-        Ok(Args { commands, names })
+        if names.len() != commands.len() {
+            Err(CommandErr::SizeMismatch(format!("Size mismatch between names and their processes, found {} name(s) and {} process(es)", names.len(), commands.len())))
+        } else {
+            Ok(Args { commands, names })
+        }
     }
 
     fn get_programmes(commands: &Vec<String>) -> Vec<String> {
