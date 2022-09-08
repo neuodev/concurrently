@@ -5,40 +5,40 @@ pub struct Colored<'a> {
 
 #[derive(Debug, Clone, Copy)]
 pub enum Color {
-    BgBlack,
-    BgRed,
-    BgGreen,
-    BgYellow,
-    BgBlue,
+    Red,
+    Green,
+    Yellow,
+    Blue,
     Purple,
     Cyan,
-    White,
+    Fuchsia,
+    Indigo,
 }
 
 impl Color {
-    fn get_bg_code<'a>(&self) -> &'a str {
+    fn get_color_code<'a>(&self) -> &'a str {
         match self {
-            Color::BgBlack => "40",
-            Color::BgRed => "41",
-            Color::BgGreen => "42",
-            Color::BgYellow => "43",
-            Color::BgBlue => "44",
-            Color::Purple => "45",
-            Color::Cyan => "46",
-            Color::White => "47",
+            Color::Red => "248;113;113",
+            Color::Fuchsia => "236;72;153",
+            Color::Green => "74;222;128",
+            Color::Yellow => "250;204;21",
+            Color::Blue => "96;165;250",
+            Color::Purple => "192;132;252",
+            Color::Cyan => "34;211;238",
+            Color::Indigo => "129;140;248",
         }
     }
 
     fn to_vec() -> Vec<Color> {
         vec![
-            Color::BgBlack,
-            Color::BgRed,
-            Color::BgGreen,
-            Color::BgYellow,
-            Color::BgBlue,
+            Color::Yellow,
+            Color::Indigo,
+            Color::Fuchsia,
+            Color::Blue,
             Color::Purple,
             Color::Cyan,
-            Color::White,
+            Color::Red,
+            Color::Green,
         ]
     }
 }
@@ -48,16 +48,16 @@ impl<'a> Colored<'a> {
         Self { text, color }
     }
 
-    pub fn new_with_idx(text: &'a str, idx: usize) {
+    pub fn new_with_idx(text: &'a str, idx: usize) -> Self {
         let colors = Color::to_vec();
         let color = colors[idx % colors.len()];
-        Colored::new(text, color);
+        Colored::new(text, color)
     }
 }
 
 impl<'a> std::fmt::Display for Colored<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let bg_code = self.color.get_bg_code();
-        write!(f, "\x1b[{};4m{}\x1b[0m", bg_code, self.text)
+        let color_code = self.color.get_color_code();
+        write!(f, "\x1B[38;2;{}m{}\x1B[0m", color_code, self.text)
     }
 }

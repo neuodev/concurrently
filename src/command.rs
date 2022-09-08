@@ -6,6 +6,8 @@ use std::{
 };
 use thiserror::Error;
 
+use crate::color::Colored;
+
 #[derive(Debug, Error)]
 pub enum CommandErr {
     #[error("`{0}` is not a valid command")]
@@ -112,7 +114,7 @@ impl Commands {
 
     pub fn spawn(self) {
         let mut handlers = vec![];
-        for (mut command, name) in self.commands.into_iter().zip(self.names) {
+        for (idx, (mut command, name)) in self.commands.into_iter().zip(self.names).enumerate() {
             handlers.push(thread::spawn(move || {
                 let mut child = command
                     .spawn()
@@ -125,8 +127,9 @@ impl Commands {
                 let c = child.stdout.take().unwrap();
                 let buf_reader = BufReader::new(c);
 
+                let name = Colored::new_with_idx(&name, idx);
                 buf_reader.lines().into_iter().for_each(|line| match line {
-                    Ok(line) => println!("\x1b[47;4m[{name}]\x1b[0m {line}"),
+                    Ok(line) => println!("{name}: {line}"),
                     Err(e) => eprintln!("{}", CommandErr::CommandOutputErr(e.to_string())),
                 })
             }));
