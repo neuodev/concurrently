@@ -14,7 +14,7 @@ Run multiple commands concurrently
 
 # Usage
 
-#### Basic usage
+## Basic usage
 
 `concurrently "command1" "command2"`
 
