@@ -6,6 +6,12 @@ Run multiple commands concurrently
     <img src="./logo.png"/>
 </p>
 
+# Preview
+
+<p align="center">
+    <img src="./preview.gif"/>
+</p>
+
 # Usage
 
 ```bash
